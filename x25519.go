@@ -6,17 +6,12 @@ package age
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"filippo.io/age/internal/bech32"
-	"filippo.io/age/internal/format"
-	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
-	"golang.org/x/crypto/hkdf"
 )
 
 const x25519Label = "age-encryption.org/v1/X25519"
@@ -33,6 +28,7 @@ type X25519Recipient struct {
 var _ Recipient = &X25519Recipient{}
 
 // newX25519RecipientFromPoint returns a new X25519Recipient from a raw Curve25519 point.
+// kyber x25519: instead of curve point size, maybe that + size of kyber key
 func newX25519RecipientFromPoint(publicKey []byte) (*X25519Recipient, error) {
 	if len(publicKey) != curve25519.PointSize {
 		return nil, errors.New("invalid X25519 public key")
@@ -59,44 +55,6 @@ func ParseX25519Recipient(s string) (*X25519Recipient, error) {
 		return nil, fmt.Errorf("malformed recipient %q: %v", s, err)
 	}
 	return r, nil
-}
-
-func (r *X25519Recipient) Wrap(fileKey []byte) ([]*Stanza, error) {
-	ephemeral := make([]byte, curve25519.ScalarSize)
-	if _, err := rand.Read(ephemeral); err != nil {
-		return nil, err
-	}
-	ourPublicKey, err := curve25519.X25519(ephemeral, curve25519.Basepoint)
-	if err != nil {
-		return nil, err
-	}
-
-	sharedSecret, err := curve25519.X25519(ephemeral, r.theirPublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	l := &Stanza{
-		Type: "X25519",
-		Args: []string{format.EncodeToString(ourPublicKey)},
-	}
-
-	salt := make([]byte, 0, len(ourPublicKey)+len(r.theirPublicKey))
-	salt = append(salt, ourPublicKey...)
-	salt = append(salt, r.theirPublicKey...)
-	h := hkdf.New(sha256.New, sharedSecret, salt, []byte(x25519Label))
-	wrappingKey := make([]byte, chacha20poly1305.KeySize)
-	if _, err := io.ReadFull(h, wrappingKey); err != nil {
-		return nil, err
-	}
-
-	wrappedKey, err := aeadEncrypt(wrappingKey, fileKey)
-	if err != nil {
-		return nil, err
-	}
-	l.Body = wrappedKey
-
-	return []*Stanza{l}, nil
 }
 
 // String returns the Bech32 public key encoding of r.
@@ -150,48 +108,6 @@ func ParseX25519Identity(s string) (*X25519Identity, error) {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
 	return r, nil
-}
-
-func (i *X25519Identity) Unwrap(stanzas []*Stanza) ([]byte, error) {
-	return multiUnwrap(i.unwrap, stanzas)
-}
-
-func (i *X25519Identity) unwrap(block *Stanza) ([]byte, error) {
-	if block.Type != "X25519" {
-		return nil, ErrIncorrectIdentity
-	}
-	if len(block.Args) != 1 {
-		return nil, errors.New("invalid X25519 recipient block")
-	}
-	publicKey, err := format.DecodeString(block.Args[0])
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse X25519 recipient: %v", err)
-	}
-	if len(publicKey) != curve25519.PointSize {
-		return nil, errors.New("invalid X25519 recipient block")
-	}
-
-	sharedSecret, err := curve25519.X25519(i.secretKey, publicKey)
-	if err != nil {
-		return nil, fmt.Errorf("invalid X25519 recipient: %v", err)
-	}
-
-	salt := make([]byte, 0, len(publicKey)+len(i.ourPublicKey))
-	salt = append(salt, publicKey...)
-	salt = append(salt, i.ourPublicKey...)
-	h := hkdf.New(sha256.New, sharedSecret, salt, []byte(x25519Label))
-	wrappingKey := make([]byte, chacha20poly1305.KeySize)
-	if _, err := io.ReadFull(h, wrappingKey); err != nil {
-		return nil, err
-	}
-
-	fileKey, err := aeadDecrypt(wrappingKey, fileKeySize, block.Body)
-	if err == errIncorrectCiphertextSize {
-		return nil, errors.New("invalid X25519 recipient block: incorrect file key size")
-	} else if err != nil {
-		return nil, ErrIncorrectIdentity
-	}
-	return fileKey, nil
 }
 
 // Recipient returns the public X25519Recipient value corresponding to i.
