@@ -101,7 +101,7 @@ func (r *X25519Recipient) Wrap(fileKey []byte) ([]*Stanza, error) {
 
 // String returns the Bech32 public key encoding of r.
 func (r *X25519Recipient) String() string {
-	s, _ := bech32.Encode("age", r.theirPublicKey)
+	s, _ := bech32.Encode("agex", r.theirPublicKey)
 	return s
 }
 
@@ -203,6 +203,6 @@ func (i *X25519Identity) Recipient() *X25519Recipient {
 
 // String returns the Bech32 private key encoding of i.
 func (i *X25519Identity) String() string {
-	s, _ := bech32.Encode("AGE-SECRET-KEY-", i.secretKey)
+	s, _ := bech32.Encode("AGE-X-SECRET-KEY-", i.secretKey)
 	return strings.ToUpper(s)
 }
