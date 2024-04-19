@@ -52,10 +52,7 @@ func ParseIdentities(f io.Reader) ([]Identity, error) {
 				return nil, fmt.Errorf("error at line %d: must have a X25519-Kyber768 identity pair", n)
 			}
 
-			i, err := createHybridIdentity(x25519_i, kyber_i)
-			if err != nil {
-				return nil, fmt.Errorf("error at line %d: %v", n, err)
-			}
+			i := createHybridIdentity(x25519_i, kyber_i)
 			ids = append(ids, i)
 			break
 		}
@@ -113,10 +110,7 @@ func ParseRecipients(f io.Reader) ([]Recipient, error) {
 				return nil, fmt.Errorf("error at line %d: must have a X25519-Kyber768 recipient pair", n)
 			}
 
-			r, err := createHybridRecipient(x25519_r, kyber_r)
-			if err != nil {
-				return nil, fmt.Errorf("malformed recipient at line %d", n)
-			}
+			r := createHybridRecipient(x25519_r, kyber_r)
 			recs = append(recs, r)
 			break
 		}
