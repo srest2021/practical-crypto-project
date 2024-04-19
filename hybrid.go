@@ -25,3 +25,15 @@ func createHybridRecipient(x25519_r *X25519Recipient, kyber_r *KyberRecipient) *
 	}
 	return r
 }
+
+func (r *HybridRecipient) Wrap(fileKey []byte) ([]*Stanza, error) {
+	return []*Stanza{}, nil
+}
+
+func (i *HybridIdentity) Unwrap(stanzas []*Stanza) ([]byte, error) {
+	return multiUnwrap(i.unwrap, stanzas)
+}
+
+func (i *HybridIdentity) unwrap(block *Stanza) ([]byte, error) {
+	return nil, nil
+}
