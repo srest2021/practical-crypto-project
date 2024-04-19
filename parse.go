@@ -35,7 +35,7 @@ func ParseIdentities(f io.Reader) ([]Identity, error) {
 		for scanner.Scan() {
 			n++
 			line2 := scanner.Text()
-			if strings.HasPrefix(line2, "#") || line1 == "" {
+			if strings.HasPrefix(line2, "#") || line2 == "" {
 				continue
 			}
 
