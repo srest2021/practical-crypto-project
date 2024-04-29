@@ -315,33 +315,46 @@ func passphrasePromptForEncryption() (string, error) {
 }
 
 func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader, out io.Writer, armor bool) {
-	var recipients []age.Recipient
-	for _, arg := range recs {
-		r, err := parseRecipient(arg)
-		if err, ok := err.(gitHubRecipientError); ok {
-			errorWithHint(err.Error(), "instead, use recipient files like",
-				"    curl -O https://github.com/"+err.username+".keys",
-				"    age -R "+err.username+".keys")
-		}
-		if err != nil {
-			errorf("%v", err)
-		}
-		recipients = append(recipients, r)
+	fmt.Println("Enrypting without password")
+	fmt.Println("Recipients (should be length 0): ", recs)
+	if len(recs) > 0 {
+		errorf("Instead, use recipient files like: age -R alice.keys")
 	}
+	fmt.Println("Recipient files: ", files)
+	fmt.Println("Identities: ", identities)
+
+	var recipients []age.Recipient
+	// for _, arg := range recs {
+	// 	r, err := parseRecipient(arg)
+	// 	if err, ok := err.(gitHubRecipientError); ok {
+	// 		errorWithHint(err.Error(), "instead, use recipient files like",
+	// 			"    curl -O https://github.com/"+err.username+".keys",
+	// 			"    age -R "+err.username+".keys")
+	// 	}
+	// 	if err != nil {
+	// 		errorf("%v", err)
+	// 	}
+	// 	recipients = append(recipients, r)
+	// }
 	for _, name := range files {
+		fmt.Println("Parsing recipients file ", name)
 		recs, err := parseRecipientsFile(name)
 		if err != nil {
 			errorf("failed to parse recipient file %q: %v", name, err)
 		}
 		recipients = append(recipients, recs...)
 	}
+	fmt.Println("Parsed recipients from recipients file: ", recipients)
+
 	for _, f := range identities {
 		switch f.Type {
 		case "i":
+			fmt.Println("Parsing identities file ", f)
 			ids, err := parseIdentitiesFile(f.Value)
 			if err != nil {
 				errorf("reading %q: %v", f.Value, err)
 			}
+			fmt.Println("Converting identities to recipients")
 			r, err := identitiesToRecipients(ids)
 			if err != nil {
 				errorf("internal error processing %q: %v", f.Value, err)
@@ -355,6 +368,9 @@ func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader
 			recipients = append(recipients, id.Recipient())
 		}
 	}
+	fmt.Println("Final parsed recipients, including those from identities file: ", recipients)
+
+	fmt.Println("Encrypting")
 	encrypt(recipients, in, out, armor)
 }
 
@@ -414,11 +430,15 @@ func (rejectScryptIdentity) Unwrap(stanzas []*age.Stanza) ([]byte, error) {
 }
 
 func decryptNotPass(flags identityFlags, in io.Reader, out io.Writer) {
+	fmt.Println("Decrypting without password")
+	fmt.Println("Identities files: ", flags)
+
 	identities := []age.Identity{rejectScryptIdentity{}}
 
 	for _, f := range flags {
 		switch f.Type {
 		case "i":
+			fmt.Println("Parsing identities file ", f)
 			ids, err := parseIdentitiesFile(f.Value)
 			if err != nil {
 				errorf("reading %q: %v", f.Value, err)
@@ -432,7 +452,9 @@ func decryptNotPass(flags identityFlags, in io.Reader, out io.Writer) {
 			identities = append(identities, id)
 		}
 	}
+	fmt.Println("Parsed identities: ", identities)
 
+	fmt.Println("Decrypting")
 	decrypt(identities, in, out)
 }
 
@@ -482,6 +504,8 @@ func identitiesToRecipients(ids []age.Identity) ([]age.Recipient, error) {
 	var recipients []age.Recipient
 	for _, id := range ids {
 		switch id := id.(type) {
+		case *age.HybridIdentity:
+			recipients = append(recipients, id.Recipient())
 		case *age.X25519Identity:
 			recipients = append(recipients, id.Recipient())
 		case *plugin.Identity:

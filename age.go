@@ -135,6 +135,7 @@ func Encrypt(dst io.Writer, recipients ...Recipient) (io.WriteCloser, error) {
 	hdr := &format.Header{}
 	var labels []string
 	for i, r := range recipients {
+		fmt.Println("Wrapping to recipient ", r)
 		stanzas, l, err := wrapWithLabels(r, fileKey)
 		if err != nil {
 			return nil, fmt.Errorf("failed to wrap key for recipient #%d: %v", i, err)
@@ -222,6 +223,7 @@ func Decrypt(src io.Reader, identities ...Identity) (io.Reader, error) {
 	errNoMatch := &NoIdentityMatchError{}
 	var fileKey []byte
 	for _, id := range identities {
+		fmt.Println("Unwrapping to identity s", id)
 		fileKey, err = id.Unwrap(stanzas)
 		if errors.Is(err, ErrIncorrectIdentity) {
 			errNoMatch.Errors = append(errNoMatch.Errors, err)
