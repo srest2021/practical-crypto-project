@@ -56,7 +56,7 @@ func parseHybridRecipient(line1 string, line2 string) (age.Recipient, error) {
 			return nil, fmt.Errorf("error parsing Kyber recipient: %v", err)
 		}
 
-		r := age.createHybridRecipient(x25519_r, kyber_r)
+		r := age.CreateHybridRecipient(x25519_r, kyber_r)
 		return r, nil
 	case strings.HasPrefix(line1, "agek1") && strings.HasPrefix(line2, "agex1"):
 		x25519_r, err := age.ParseX25519Recipient(line2)
@@ -68,7 +68,7 @@ func parseHybridRecipient(line1 string, line2 string) (age.Recipient, error) {
 			return nil, fmt.Errorf("error parsing Kyber recipient: %v", err)
 		}
 
-		r := age.createHybridRecipient(x25519_r, kyber_r)
+		r := age.CreateHybridRecipient(x25519_r, kyber_r)
 		return r, nil
 	}
 	return nil, fmt.Errorf("error parsing hybrid recipient")
