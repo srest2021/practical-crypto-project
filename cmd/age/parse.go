@@ -291,17 +291,30 @@ func parseIdentities(f io.Reader) ([]age.Identity, error) {
 	var n int
 	for scanner.Scan() {
 		n++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || line == "" {
+		line1 := scanner.Text()
+		if strings.HasPrefix(line1, "#") || line1 == "" {
 			continue
 		}
 
-		i, err := parseIdentity(line)
-		if err != nil {
-			return nil, fmt.Errorf("error at line %d: %v", n, err)
-		}
-		ids = append(ids, i)
+		for scanner.Scan() {
+			n++
+			line2 := scanner.Text()
+			if strings.HasPrefix(line2, "#") || line2 == "" {
+				continue
+			}
 
+			i, err := parseHybridIdentity(line1, line2)
+			if err != nil {
+				// Hide the error since it might unintentionally leak the contents
+				// of confidential files.
+				return nil, fmt.Errorf("malformed identity at lines %d-%d", n-1, n)
+			}
+
+			ids = append(ids, i)
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("failed to read secret keys file: %v", err)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read secret keys file: %v", err)
