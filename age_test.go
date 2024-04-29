@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"filippo.io/age"
+	age "github.com/srest2021/practical-crypto-project"
 )
 
 func ExampleEncrypt() {

@@ -10,7 +10,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 
-	"filippo.io/age"
+	age "github.com/srest2021/practical-crypto-project"
 	"golang.org/x/crypto/ssh"
 )
 

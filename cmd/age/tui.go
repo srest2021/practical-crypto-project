@@ -22,8 +22,8 @@ import (
 	"os"
 	"runtime"
 
-	"filippo.io/age/armor"
-	"filippo.io/age/plugin"
+	"github.com/srest2021/practical-crypto-project/armor"
+	"github.com/srest2021/practical-crypto-project/plugin"
 	"golang.org/x/term"
 )
 

@@ -17,10 +17,10 @@ import (
 	"strings"
 	"testing"
 
-	"filippo.io/age"
-	"filippo.io/age/armor"
-	"filippo.io/age/internal/format"
-	"filippo.io/age/internal/stream"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/armor"
+	"github.com/srest2021/practical-crypto-project/internal/format"
+	"github.com/srest2021/practical-crypto-project/internal/stream"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
 

@@ -12,10 +12,10 @@ import (
 	"os"
 	"strings"
 
-	"filippo.io/age"
-	"filippo.io/age/agessh"
-	"filippo.io/age/armor"
-	"filippo.io/age/plugin"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/agessh"
+	"github.com/srest2021/practical-crypto-project/armor"
+	"github.com/srest2021/practical-crypto-project/plugin"
 	"golang.org/x/crypto/cryptobyte"
 	"golang.org/x/crypto/ssh"
 )
@@ -120,7 +120,7 @@ func parseRecipientsFile(name string) ([]age.Recipient, error) {
 			if err != nil {
 				// Hide the error since it might unintentionally leak the contents
 				// of confidential files.
-				return nil, fmt.Errorf("%q: malformed recipient at line %d", name, n)
+				return nil, fmt.Errorf("%q: malformed recipient at lines %d-%d", name, n-1, n)
 			}
 			recs = append(recs, r)
 			break
