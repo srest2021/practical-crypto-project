@@ -51,6 +51,7 @@ func parseHybridRecipient(line1 string, line2 string) (age.Recipient, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error parsing X25519 recipient: %v", err)
 		}
+
 		kyber_r, err := age.ParseKyberRecipient(line2)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing Kyber recipient: %v", err)
@@ -58,14 +59,16 @@ func parseHybridRecipient(line1 string, line2 string) (age.Recipient, error) {
 
 		r := age.CreateHybridRecipient(x25519_r, kyber_r)
 		return r, nil
+
 	case strings.HasPrefix(line1, "agek1") && strings.HasPrefix(line2, "agex1"):
-		x25519_r, err := age.ParseX25519Recipient(line2)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing X25519 recipient: %v", err)
-		}
 		kyber_r, err := age.ParseKyberRecipient(line1)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing Kyber recipient: %v", err)
+		}
+
+		x25519_r, err := age.ParseX25519Recipient(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 recipient: %v", err)
 		}
 
 		r := age.CreateHybridRecipient(x25519_r, kyber_r)
@@ -245,6 +248,39 @@ func parseIdentity(s string) (age.Identity, error) {
 	default:
 		return nil, fmt.Errorf("unknown identity type")
 	}
+}
+
+func parseHybridIdentity(line1 string, line2 string) (age.Identity, error) {
+	switch {
+	case strings.HasPrefix(line1, "AGE-X-SECRET-KEY-1") && strings.HasPrefix(line2, "AGE-K-SECRET-KEY-1"):
+		x25519_i, err := age.ParseX25519Identity(line1)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 identity: %v", err)
+		}
+
+		kyber_i, err := age.ParseKyberIdentity(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing Kyber identity: %v", err)
+		}
+
+		i := age.CreateHybridIdentity(x25519_i, kyber_i)
+		return i, nil
+
+	case strings.HasPrefix(line1, "AGE-K-SECRET-KEY-1") && strings.HasPrefix(line2, "AGE-X-SECRET-KEY-1"):
+		kyber_i, err := age.ParseKyberIdentity(line1)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing Kyber identity: %v", err)
+		}
+
+		x25519_i, err := age.ParseX25519Identity(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 identity: %v", err)
+		}
+
+		i := age.CreateHybridIdentity(x25519_i, kyber_i)
+		return i, nil
+	}
+	return nil, fmt.Errorf("error parsing hybrid identity")
 }
 
 // parseIdentities is like age.ParseIdentities, but supports plugin identities.
