@@ -18,3 +18,5 @@ require (
 
 // https://github.com/rogpeppe/go-internal/pull/172
 replace github.com/rogpeppe/go-internal => github.com/FiloSottile/go-internal v1.8.2-0.20230806172430-94b0f0dc0b1e
+
+require github.com/Universal-Health-Chain/uhc-cloudflare-circl v1.0.0
