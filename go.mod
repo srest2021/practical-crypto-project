@@ -1,4 +1,4 @@
-module github.com/srest2021/practical-crypto-project //filippo.io/age
+module github.com/srest2021/practical-crypto-project
 
 go 1.19
 
@@ -9,6 +9,9 @@ require (
 	golang.org/x/term v0.3.0
 )
 
+// kyber768
+require github.com/Universal-Health-Chain/uhc-cloudflare-circl v1.0.0
+
 // Test dependencies.
 require (
 	c2sp.org/CCTV/age v0.0.0-20221230231406-5ea85644bd03
@@ -18,5 +21,3 @@ require (
 
 // https://github.com/rogpeppe/go-internal/pull/172
 replace github.com/rogpeppe/go-internal => github.com/FiloSottile/go-internal v1.8.2-0.20230806172430-94b0f0dc0b1e
-
-require github.com/Universal-Health-Chain/uhc-cloudflare-circl v1.0.0

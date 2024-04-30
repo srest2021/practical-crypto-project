@@ -54,7 +54,7 @@ func ParseKyberRecipient(s string) (*KyberRecipient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed recipient %q: %v", s, err)
 	}
-	if t != "age" {
+	if t != "agek" {
 		return nil, fmt.Errorf("malformed recipient %q: invalid type %q", s, t)
 	}
 	r, err := newKyberRecipientFromPoint(k)
@@ -107,7 +107,7 @@ func ParseKyberIdentity(s string) (*KyberIdentity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
-	if t != "AGE-SECRET-KEY-" {
+	if t != "AGE-K-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
 	r, err := newKyberIdentityFromScalar(k)
