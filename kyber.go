@@ -97,7 +97,7 @@ func ParseKyberIdentity(s string) (*KyberIdentity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
-	if t != "HYBRID-SECRET-KEY-" {
+	if t != "AGE-K-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
 	r, err := GenerateSeededKyberIdentity(k)
@@ -116,6 +116,6 @@ func (i *KyberIdentity) Recipient() *KyberRecipient {
 
 // String returns the Bech32 private key encoding of i.
 func (i *KyberIdentity) String() string {
-	s, _ := bech32.Encode("HYBRID-SECRET-KEY-", i.secretKey)
+	s, _ := bech32.Encode("AGE-K-SECRET-KEY-", i.secretKey)
 	return strings.ToUpper(s)
 }
