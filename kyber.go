@@ -85,6 +85,10 @@ func GenerateKyberIdentity() (*KyberIdentity, error) {
 }
 
 // NOTE: may actually want all keys to be seeded? original x25519 stuff is all seeded... up to us probably
+// same idea as newX25519IdentityFromScalar because we are taking in k which is the given private key
+// this is verses the GenerateKyberIdentity. in that function above we aren't given a secret key
+// so we just make the identity info based off of rand.Reader, which is just like how it's done in
+// GenerateX25519Identity
 func GenerateSeededKyberIdentity(k []byte) (*KyberIdentity, error) {
 	publicKey, privateKey := kyber768.NewKeyFromSeed(k)
 	return PackIdentity(*publicKey, *privateKey)
