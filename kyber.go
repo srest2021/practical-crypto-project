@@ -11,24 +11,15 @@ import (
 	"strings"
 
 	"github.com/srest2021/practical-crypto-project/internal/bech32"
-	"golang.org/x/crypto/curve25519"
 
 	"github.com/Universal-Health-Chain/uhc-cloudflare-circl/pke/kyber/kyber768"
 )
 
+//encapsulation: "github.com/linckode/circl/kem/kyber/kyber768"
+
 // const X25519Label = "age-encryption.org/v1/X25519" //?????
 const KyberLabel = "kyber" //change later once I look into it more
 
-//X25519
-//x25519 things that may need to be changed to Kyber
-//curve25519.PointSize: this is the curve the public key is gotten from
-//Kyber functiont to use instead: func GenerateKey(rand io.Reader) (*PublicKey, *PrivateKey, error)
-
-// KyberRecipient is the standard age public key. Messages encrypted to this
-// recipient can be decrypted with the corresponding KyberIdentity.
-//
-// This recipient is anonymous, in the sense that an attacker can't tell from
-// the message alone if it is encrypted to a certain recipient.
 type KyberRecipient struct {
 	theirPublicKey []byte
 }
@@ -36,7 +27,7 @@ type KyberRecipient struct {
 var _ Recipient = &KyberRecipient{}
 
 // newKyberRecipientFromPoint returns a new KyberRecipient.
-func newKyberRecipientFromPoint(publicKey []byte) (*KyberRecipient, error) {
+func newKyberRecipient(publicKey []byte) (*KyberRecipient, error) {
 	if len(publicKey) != kyber768.PublicKeySize {
 		return nil, errors.New("invalid KyberRecipient public key")
 	}
@@ -48,7 +39,7 @@ func newKyberRecipientFromPoint(publicKey []byte) (*KyberRecipient, error) {
 }
 
 // ParseKyberRecipient returns a new KyberRecipient from a Bech32 public key
-// encoding with the "age1" prefix.
+// encoding with the "agek1" prefix.
 func ParseKyberRecipient(s string) (*KyberRecipient, error) {
 	t, k, err := bech32.Decode(s)
 	if err != nil {
@@ -57,7 +48,7 @@ func ParseKyberRecipient(s string) (*KyberRecipient, error) {
 	if t != "agek" {
 		return nil, fmt.Errorf("malformed recipient %q: invalid type %q", s, t)
 	}
-	r, err := newKyberRecipientFromPoint(k)
+	r, err := newKyberRecipient(k)
 	if err != nil {
 		return nil, fmt.Errorf("malformed recipient %q: %v", s, err)
 	}
@@ -78,30 +69,53 @@ type KyberIdentity struct {
 
 var _ Identity = &KyberIdentity{}
 
-// newKyberIdentityFromScalar returns a new X25519Identity from a raw Curve25519 scalar.
-func newKyberIdentityFromScalar(secretKey []byte) (*KyberIdentity, error) {
-	if len(secretKey) != curve25519.ScalarSize {
-		return nil, errors.New("invalid Kyber secret key")
-	}
+func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey) (*KyberIdentity, error) {
 	i := &KyberIdentity{
-		secretKey: make([]byte, curve25519.ScalarSize),
+		secretKey: make([]byte, kyber768.PrivateKeySize),
 	}
-	copy(i.secretKey, secretKey)
-	i.ourPublicKey, _ = curve25519.X25519(i.secretKey, curve25519.Basepoint)
+	//think other code expects bytes so I'm converting privateKey to byte array
+	privBuf := make([]byte, kyber768.PrivateKeySize)
+	privateKey.Pack(privBuf)
+	copy(i.secretKey, privBuf)
+
+	pubBuf := make([]byte, kyber768.PublicKeySize)
+	publicKey.Pack(pubBuf)
+	copy(i.ourPublicKey, pubBuf)
+
 	return i, nil
 }
 
+func UnpackIdentity(i *KyberIdentity) (kyber768.PublicKey, kyber768.PrivateKey) {
+	var publicKey kyber768.PublicKey
+	publicKey.Unpack(i.ourPublicKey)
+
+	var privateKey kyber768.PrivateKey
+	privateKey.Unpack(i.secretKey)
+
+	return publicKey, privateKey
+}
+
 // GenerateKyberIdentity randomly generates a new KyberIdentity.
-func GenerateKyberIdentity() (*KyberIdentity, error) {
-	secretKey := make([]byte, curve25519.ScalarSize)
-	if _, err := rand.Read(secretKey); err != nil {
-		return nil, fmt.Errorf("internal error: %v", err)
+func GenerateRandomKyberIdentity() (*KyberIdentity, error) {
+	publicKey, privateKey, err := kyber768.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
 	}
-	return newKyberIdentityFromScalar(secretKey)
+	return PackIdentity(*publicKey, *privateKey)
+}
+
+// NOTE: may actually want all keys to be seeded? original x25519 stuff is all seeded... up to us probably
+// same idea as newX25519IdentityFromScalar because we are taking in k which is the given private key
+// this is verses the GenerateKyberIdentity. in that function above we aren't given a secret key
+// so we just make the identity info based off of rand.Reader, which is just like how it's done in
+// GenerateX25519Identity
+func GenerateSeededKyberIdentity(k []byte) (*KyberIdentity, error) {
+	publicKey, privateKey := kyber768.NewKeyFromSeed(k)
+	return PackIdentity(*publicKey, *privateKey)
 }
 
 // ParseKyberIdentity returns a new KyberIdentity from a Bech32 private key
-// encoding with the "AGE-SECRET-KEY-1" prefix.
+// encoding with the "AGE-K-SECRET-KEY-1" prefix.
 func ParseKyberIdentity(s string) (*KyberIdentity, error) {
 	t, k, err := bech32.Decode(s)
 	if err != nil {
@@ -110,7 +124,7 @@ func ParseKyberIdentity(s string) (*KyberIdentity, error) {
 	if t != "AGE-K-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
-	r, err := newKyberIdentityFromScalar(k)
+	r, err := GenerateSeededKyberIdentity(k)
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}

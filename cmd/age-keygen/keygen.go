@@ -122,7 +122,7 @@ func main() {
 
 func generate(out *os.File) {
 	x25519_k, err := age.GenerateX25519Identity()
-	kyber_k, err := age.GenerateKyberIdentity()
+	kyber_k, err := age.GenerateRandomKyberIdentity()
 	if err != nil {
 		errorf("internal error: %v", err)
 	}

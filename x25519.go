@@ -45,13 +45,13 @@ func newX25519RecipientFromPoint(publicKey []byte) (*X25519Recipient, error) {
 }
 
 // ParseX25519Recipient returns a new X25519Recipient from a Bech32 public key
-// encoding with the "age1" prefix.
+// encoding with the "agex1" prefix.
 func ParseX25519Recipient(s string) (*X25519Recipient, error) {
 	t, k, err := bech32.Decode(s)
 	if err != nil {
 		return nil, fmt.Errorf("malformed recipient %q: %v", s, err)
 	}
-	if t != "age" {
+	if t != "agex" {
 		return nil, fmt.Errorf("malformed recipient %q: invalid type %q", s, t)
 	}
 	r, err := newX25519RecipientFromPoint(k)
@@ -142,7 +142,7 @@ func ParseX25519Identity(s string) (*X25519Identity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
-	if t != "AGE-SECRET-KEY-" {
+	if t != "AGE-X-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
 	r, err := newX25519IdentityFromScalar(k)
