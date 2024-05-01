@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"filippo.io/age/internal/bech32"
-	"golang.org/x/crypto/curve25519"
 
 	"github.com/Universal-Health-Chain/uhc-cloudflare-circl/pke/kyber/kyber768"
 )
@@ -19,21 +18,9 @@ import (
 // const X25519Label = "age-encryption.org/v1/X25519" //?????
 const KyberLabel = "kyber" //change later once I look into it more
 
-//X25519
-//x25519 things that may need to be changed to Kyber
-//curve25519.PointSize: this is the curve the public key is gotten from
-//Kyber functiont to use instead: func GenerateKey(rand io.Reader) (*PublicKey, *PrivateKey, error)
-
-// KyberRecipient is the standard age public key. Messages encrypted to this
-// recipient can be decrypted with the corresponding KyberIdentity.
-//
-// This recipient is anonymous, in the sense that an attacker can't tell from
-// the message alone if it is encrypted to a certain recipient.
 type KyberRecipient struct {
 	theirPublicKey []byte
 }
-
-var _ Recipient = &KyberRecipient{}
 
 // newKyberRecipientFromPoint returns a new KyberRecipient.
 func newKyberRecipientFromPoint(publicKey []byte) (*KyberRecipient, error) {
@@ -70,28 +57,36 @@ type KyberIdentity struct {
 	secretKey, ourPublicKey []byte
 }
 
-var _ Identity = &KyberIdentity{}
-
-// newKyberIdentityFromScalar returns a new X25519Identity from a raw Curve25519 scalar.
-func newKyberIdentityFromScalar(secretKey []byte) (*KyberIdentity, error) {
-	if len(secretKey) != curve25519.ScalarSize {
-		return nil, errors.New("invalid Kyber secret key")
+// GenerateKyberIdentity randomly generates a new KyberIdentity.
+func GenerateKyberIdentity() (*KyberIdentity, error) {
+	publicKey, privateKey, err := kyber768.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
 	}
 	i := &KyberIdentity{
-		secretKey: make([]byte, curve25519.ScalarSize),
+		secretKey: make([]byte, kyber768.PrivateKeySize),
 	}
-	copy(i.secretKey, secretKey)
-	i.ourPublicKey, _ = curve25519.X25519(i.secretKey, curve25519.Basepoint)
+	//think other code expects bytes so I'm converting privateKey to byte array
+	privBuf := make([]byte, kyber768.PrivateKeySize)
+	privateKey.Pack(privBuf)
+	copy(i.secretKey, privBuf)
+
+	pubBuf := make([]byte, kyber768.PublicKeySize)
+	publicKey.Pack(pubBuf)
+	copy(i.ourPublicKey, pubBuf)
+
 	return i, nil
 }
 
-// GenerateKyberIdentity randomly generates a new KyberIdentity.
-func GenerateKyberIdentity() (*KyberIdentity, error) {
-	secretKey := make([]byte, curve25519.ScalarSize)
-	if _, err := rand.Read(secretKey); err != nil {
-		return nil, fmt.Errorf("internal error: %v", err)
-	}
-	return newKyberIdentityFromScalar(secretKey)
+type Result struct {
+	PublicKey PublicKey
+	Value     int
+}
+
+func encapsulate(pubKyberKey kyber768.PublicKey) Result {
+	publicKey := PublicKey
+	value := 42
+	return Result{PublicKey: publicKey, Value: value}
 }
 
 // ParseKyberIdentity returns a new KyberIdentity from a Bech32 private key
@@ -120,6 +115,6 @@ func (i *KyberIdentity) Recipient() *KyberRecipient {
 
 // String returns the Bech32 private key encoding of i.
 func (i *KyberIdentity) String() string {
-	s, _ := bech32.Encode("AGE-SECRET-KEY-", i.secretKey)
+	s, _ := bech32.Encode("HYBRID-SECRET-KEY-", i.secretKey)
 	return strings.ToUpper(s)
 }
