@@ -15,6 +15,8 @@ import (
 	"github.com/Universal-Health-Chain/uhc-cloudflare-circl/pke/kyber/kyber768"
 )
 
+//encapsulation: "github.com/linckode/circl/kem/kyber/kyber768"
+
 // const X25519Label = "age-encryption.org/v1/X25519" //?????
 const KyberLabel = "kyber" //change later once I look into it more
 
@@ -23,7 +25,7 @@ type KyberRecipient struct {
 }
 
 // newKyberRecipientFromPoint returns a new KyberRecipient.
-func newKyberRecipientFromPoint(publicKey []byte) (*KyberRecipient, error) {
+func newKyberRecipient(publicKey []byte) (*KyberRecipient, error) {
 	if len(publicKey) != kyber768.PublicKeySize {
 		return nil, errors.New("invalid KyberRecipient public key")
 	}
@@ -44,7 +46,7 @@ func ParseKyberRecipient(s string) (*KyberRecipient, error) {
 	if t != "age" {
 		return nil, fmt.Errorf("malformed recipient %q: invalid type %q", s, t)
 	}
-	r, err := newKyberRecipientFromPoint(k)
+	r, err := newKyberRecipient(k)
 	if err != nil {
 		return nil, fmt.Errorf("malformed recipient %q: %v", s, err)
 	}
@@ -57,12 +59,7 @@ type KyberIdentity struct {
 	secretKey, ourPublicKey []byte
 }
 
-// GenerateKyberIdentity randomly generates a new KyberIdentity.
-func GenerateKyberIdentity() (*KyberIdentity, error) {
-	publicKey, privateKey, err := kyber768.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, err
-	}
+func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey) (*KyberIdentity, error) {
 	i := &KyberIdentity{
 		secretKey: make([]byte, kyber768.PrivateKeySize),
 	}
@@ -78,15 +75,19 @@ func GenerateKyberIdentity() (*KyberIdentity, error) {
 	return i, nil
 }
 
-type Result struct {
-	PublicKey PublicKey
-	Value     int
+// GenerateKyberIdentity randomly generates a new KyberIdentity.
+func GenerateKyberIdentity() (*KyberIdentity, error) {
+	publicKey, privateKey, err := kyber768.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	return PackIdentity(*publicKey, *privateKey)
 }
 
-func encapsulate(pubKyberKey kyber768.PublicKey) Result {
-	publicKey := PublicKey
-	value := 42
-	return Result{PublicKey: publicKey, Value: value}
+// NOTE: may actually want all keys to be seeded? original x25519 stuff is all seeded... up to us probably
+func GenerateSeededKyberIdentity(k []byte) (*KyberIdentity, error) {
+	publicKey, privateKey := kyber768.NewKeyFromSeed(k)
+	return PackIdentity(*publicKey, *privateKey)
 }
 
 // ParseKyberIdentity returns a new KyberIdentity from a Bech32 private key
@@ -96,10 +97,10 @@ func ParseKyberIdentity(s string) (*KyberIdentity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
-	if t != "AGE-SECRET-KEY-" {
+	if t != "HYBRID-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
-	r, err := newKyberIdentityFromScalar(k)
+	r, err := GenerateSeededKyberIdentity(k)
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
