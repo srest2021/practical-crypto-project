@@ -51,7 +51,7 @@ func (i *HybridIdentity) String() string {
 // String returns the Bech32 public key encoding of r.
 func (r *HybridRecipient) String() string {
 	x25519_s, _ := bech32.Encode("agex", r.theirXPublicKey)
-	kyber_s, _ := bech32.Encode("agek", r.theirXPublicKey)
+	kyber_s, _ := bech32.Encode("agek", r.theirKPublicKey)
 	s := x25519_s + "\n" + kyber_s
 	return s
 }

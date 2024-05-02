@@ -73,7 +73,7 @@ func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey, 
 	i := &KyberIdentity{
 		ourPublicKey: make([]byte, kyber768.PublicKeySize),
 		secretKey:    make([]byte, kyber768.PrivateKeySize),
-		seed:         seed,
+		seed:         make([]byte, kyber768.KeySeedSize),
 	}
 	//think other code expects bytes so I'm converting privateKey to byte array
 	privBuf := make([]byte, kyber768.PrivateKeySize)
@@ -84,28 +84,10 @@ func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey, 
 	publicKey.Pack(pubBuf)
 	copy(i.ourPublicKey, pubBuf)
 
+	copy(i.seed, seed)
+
 	return i, nil
 }
-
-// // don't know if we'll need to use this
-// func UnpackIdentity(i *KyberIdentity) (kyber768.PublicKey, kyber768.PrivateKey) {
-// 	var publicKey kyber768.PublicKey
-// 	publicKey.Unpack(i.ourPublicKey)
-
-// 	var privateKey kyber768.PrivateKey
-// 	privateKey.Unpack(i.secretKey)
-
-// 	return publicKey, privateKey
-// }
-
-// // GenerateKyberIdentity randomly generates a new KyberIdentity.
-// func GenerateRandomKyberIdentity() (*KyberIdentity, error) {
-// 	publicKey, privateKey, err := kyber768.GenerateKey(rand.Reader)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return PackIdentity(*publicKey, *privateKey)
-// }
 
 // NOTE: may actually want all keys to be seeded? original x25519 stuff is all seeded... up to us probably
 // same idea as newX25519IdentityFromScalar because we are taking in k which is the given private key
@@ -123,6 +105,7 @@ func GenerateSeededKyberIdentity() (*KyberIdentity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not generate seed")
 	}
+	fmt.Println("SEED: ", seed)
 	return GenerateKyberIdentityFromSeed(seed)
 }
 
@@ -134,11 +117,12 @@ func ParseKyberIdentity(s string) (*KyberIdentity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
+	fmt.Println("SEED: ", seed)
 	if t != "AGE-K-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
-	fmt.Println("generating seeded kyber identity from: ", seed)
 	r, err := GenerateKyberIdentityFromSeed(seed)
+	fmt.Println("PARSED IDENTITY: ", r, r.Recipient())
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
