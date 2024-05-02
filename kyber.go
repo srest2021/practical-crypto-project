@@ -105,24 +105,20 @@ func GenerateSeededKyberIdentity() (*KyberIdentity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not generate seed")
 	}
-	fmt.Println("SEED: ", seed)
 	return GenerateKyberIdentityFromSeed(seed)
 }
 
 // ParseKyberIdentity returns a new KyberIdentity from a Bech32 private key
 // encoding with the "AGE-K-SECRET-KEY-1" prefix.
 func ParseKyberIdentity(s string) (*KyberIdentity, error) {
-	fmt.Println("parsing kyber identity: ", s)
 	t, seed, err := bech32.Decode(s)
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
-	fmt.Println("SEED: ", seed)
 	if t != "AGE-K-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
 	r, err := GenerateKyberIdentityFromSeed(seed)
-	fmt.Println("PARSED IDENTITY: ", r, r.Recipient())
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
