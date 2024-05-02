@@ -125,7 +125,7 @@ func generate(out *os.File) {
 	if err != nil {
 		errorf("internal error: %v", err)
 	}
-	kyber_k, err := age.GenerateRandomKyberIdentity()
+	kyber_k, err := age.GenerateSeededKyberIdentity()
 	if err != nil {
 		errorf("internal error: %v", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ import (
 // Currently, all returned values are of type *X25519Identity, but different
 // types might be returned in the future.
 func ParseIdentities(f io.Reader) ([]Identity, error) {
+	log.Printf("got here")
 	const privateKeySizeLimit = 1 << 24 // 16 MiB
 	var ids []Identity
 	scanner := bufio.NewScanner(io.LimitReader(f, privateKeySizeLimit))
@@ -31,6 +33,7 @@ func ParseIdentities(f io.Reader) ([]Identity, error) {
 		if strings.HasPrefix(line1, "#") || line1 == "" {
 			continue
 		}
+		log.Printf("scanned line1: %s", line1)
 
 		for scanner.Scan() {
 			n++
@@ -38,6 +41,7 @@ func ParseIdentities(f io.Reader) ([]Identity, error) {
 			if strings.HasPrefix(line2, "#") || line2 == "" {
 				continue
 			}
+			log.Printf("scanned line2: %s", line2)
 
 			var x25519_i *X25519Identity
 			var kyber_i *KyberIdentity
