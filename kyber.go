@@ -71,7 +71,8 @@ var _ Identity = &KyberIdentity{}
 
 func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey) (*KyberIdentity, error) {
 	i := &KyberIdentity{
-		secretKey: make([]byte, kyber768.PrivateKeySize),
+		ourPublicKey: make([]byte, kyber768.PublicKeySize),
+		secretKey:    make([]byte, kyber768.PrivateKeySize),
 	}
 	//think other code expects bytes so I'm converting privateKey to byte array
 	privBuf := make([]byte, kyber768.PrivateKeySize)
@@ -85,6 +86,7 @@ func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey) 
 	return i, nil
 }
 
+// don't know if we'll need to use this
 func UnpackIdentity(i *KyberIdentity) (kyber768.PublicKey, kyber768.PrivateKey) {
 	var publicKey kyber768.PublicKey
 	publicKey.Unpack(i.ourPublicKey)
