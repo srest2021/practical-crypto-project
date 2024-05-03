@@ -63,8 +63,8 @@ type KyberIdentity struct {
 
 var _ Identity = &KyberIdentity{}
 
-// PackIdentity packs the identity public key, private key, and seed to bytes.
-func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey, seed []byte) (*KyberIdentity, error) {
+// PackKyberIdentity packs the identity public key, private key, and seed to bytes.
+func PackKyberIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey, seed []byte) (*KyberIdentity, error) {
 	i := &KyberIdentity{
 		ourPublicKey: make([]byte, kyber768.PublicKeySize),
 		secretKey:    make([]byte, kyber768.PrivateKeySize),
@@ -91,7 +91,7 @@ func PackIdentity(publicKey kyber768.PublicKey, privateKey kyber768.PrivateKey, 
 // GenerateKyberIdentityFromSeed generates a public/private keypair from the given seed
 func GenerateKyberIdentityFromSeed(seed []byte) (*KyberIdentity, error) {
 	publicKey, privateKey := kyber768.NewKeyFromSeed(seed)
-	return PackIdentity(*publicKey, *privateKey, seed)
+	return PackKyberIdentity(*publicKey, *privateKey, seed)
 }
 
 // GenerateSeededKyberIdentity generates a random seed,
