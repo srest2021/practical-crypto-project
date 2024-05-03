@@ -1,10 +1,20 @@
 package age
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"io"
 	"strings"
 
+	"github.com/Universal-Health-Chain/uhc-cloudflare-circl/pke/kyber/kyber768"
 	"github.com/srest2021/practical-crypto-project/internal/bech32"
+	"github.com/srest2021/practical-crypto-project/internal/format"
+	"golang.org/x/crypto/chacha20poly1305"
+	"golang.org/x/crypto/curve25519"
+	"golang.org/x/crypto/hkdf"
 )
+
+const hybridLabel = "github.com/srest2021/practical-crypto-project"
 
 type HybridRecipient struct {
 	theirXPublicKey, theirKPublicKey []byte
@@ -56,8 +66,70 @@ func (r *HybridRecipient) String() string {
 	return s
 }
 
+func UnpackKyberRecipient(r *HybridRecipient) kyber768.PublicKey {
+	var pubKey kyber768.PublicKey
+	pubKey.Unpack(r.theirKPublicKey)
+	return pubKey
+}
+
+func KyberEncapsulate(r *HybridRecipient) ([]byte, []byte) {
+	// generate random k (not sure if this is right?)
+	k := make([]byte, kyber768.PlaintextSize)
+	rand.Read(k)
+
+	// generate random seed
+	seed := make([]byte, kyber768.EncryptionSeedSize)
+	rand.Read(seed)
+
+	// encapsulate k and write Kyber768 peer share to c2
+	c2 := make([]byte, kyber768.CiphertextSize)
+	unpackedKPublicKey := UnpackKyberRecipient(r)
+	unpackedKPublicKey.EncryptTo(c2, k, seed)
+	return c2, k
+}
+
 func (r *HybridRecipient) Wrap(fileKey []byte) ([]*Stanza, error) {
-	return []*Stanza{}, nil
+	// X25519 ephemeral and peer share
+	ephemeral := make([]byte, curve25519.ScalarSize)
+	if _, err := rand.Read(ephemeral); err != nil {
+		return nil, err
+	}
+	c1, err := curve25519.X25519(ephemeral, curve25519.Basepoint)
+	if err != nil {
+		return nil, err
+	}
+
+	sharedSecret, err := curve25519.X25519(ephemeral, r.theirXPublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	c2, k := KyberEncapsulate(r)
+
+	l := &Stanza{
+		Type: "X25519",
+		Args: []string{format.EncodeToString(c1), format.EncodeToString(c2)},
+	}
+
+	salt := "age-encryption.org/Kyber768+X25519"
+	ikm := make([]byte, 0, len(sharedSecret)+len(c1)+len(r.theirXPublicKey)+len(k))
+	ikm = append(ikm, sharedSecret...)
+	ikm = append(ikm, c1...)
+	ikm = append(ikm, r.theirXPublicKey...)
+	ikm = append(ikm, k...)
+	h := hkdf.New(sha256.New, ikm, []byte(salt), []byte(hybridLabel))
+	wrappingKey := make([]byte, chacha20poly1305.KeySize)
+	if _, err := io.ReadFull(h, wrappingKey); err != nil {
+		return nil, err
+	}
+
+	wrappedKey, err := aeadEncrypt(wrappingKey, fileKey)
+	if err != nil {
+		return nil, err
+	}
+	l.Body = wrappedKey
+
+	return []*Stanza{l}, nil
 }
 
 func (i *HybridIdentity) Unwrap(stanzas []*Stanza) ([]byte, error) {
