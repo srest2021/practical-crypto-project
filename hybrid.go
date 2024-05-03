@@ -66,12 +66,15 @@ func (r *HybridRecipient) String() string {
 	return s
 }
 
+// UnpackKyberRecipient unpacks the recipient's Kyber768 public key.
 func UnpackKyberRecipient(r *HybridRecipient) kyber768.PublicKey {
 	var pubKey kyber768.PublicKey
 	pubKey.Unpack(r.theirKPublicKey)
 	return pubKey
 }
 
+// KyberEncapsulate encapsulates a randomly generated key to the recipient's Kyber768 public key
+// and returns the key and peer share.
 func KyberEncapsulate(r *HybridRecipient) ([]byte, []byte) {
 	// generate random k (not sure if this is right?)
 	k := make([]byte, kyber768.PlaintextSize)
@@ -107,7 +110,7 @@ func (r *HybridRecipient) Wrap(fileKey []byte) ([]*Stanza, error) {
 	c2, k := KyberEncapsulate(r)
 
 	l := &Stanza{
-		Type: "X25519",
+		Type: "Hybrid",
 		Args: []string{format.EncodeToString(c1), format.EncodeToString(c2)},
 	}
 
