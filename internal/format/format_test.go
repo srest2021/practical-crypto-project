@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"filippo.io/age/internal/format"
+	"github.com/srest2021/practical-crypto-project/internal/format"
 )
 
 func TestStanzaMarshal(t *testing.T) {

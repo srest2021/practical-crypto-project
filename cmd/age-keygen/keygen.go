@@ -13,7 +13,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"filippo.io/age"
+	age "github.com/srest2021/practical-crypto-project"
 	"golang.org/x/term"
 )
 
@@ -121,18 +121,25 @@ func main() {
 }
 
 func generate(out *os.File) {
-	k, err := age.GenerateX25519Identity()
+	x25519_k, err := age.GenerateX25519Identity()
+	if err != nil {
+		errorf("internal error: %v", err)
+	}
+	kyber_k, err := age.GenerateSeededKyberIdentity()
 	if err != nil {
 		errorf("internal error: %v", err)
 	}
 
 	if !term.IsTerminal(int(out.Fd())) {
-		fmt.Fprintf(os.Stderr, "Public key: %s\n", k.Recipient())
+		fmt.Fprintf(os.Stderr, "X25519 public key: %s\n", x25519_k.Recipient())
+		fmt.Fprintf(os.Stderr, "Kyber768 public key: %s\n", kyber_k.Recipient())
 	}
 
 	fmt.Fprintf(out, "# created: %s\n", time.Now().Format(time.RFC3339))
-	fmt.Fprintf(out, "# public key: %s\n", k.Recipient())
-	fmt.Fprintf(out, "%s\n", k)
+	fmt.Fprintf(out, "# X25519 public key: %s\n", x25519_k.Recipient())
+	fmt.Fprintf(out, "%s\n", x25519_k)
+	fmt.Fprintf(out, "# Kyber768 public key: %s\n", kyber_k.Recipient())
+	fmt.Fprintf(out, "%s\n", kyber_k)
 }
 
 func convert(in io.Reader, out io.Writer) {
@@ -144,7 +151,7 @@ func convert(in io.Reader, out io.Writer) {
 		errorf("no identities found in the input")
 	}
 	for _, id := range ids {
-		id, ok := id.(*age.X25519Identity)
+		id, ok := id.(*age.HybridIdentity)
 		if !ok {
 			errorf("internal error: unexpected identity type: %T", id)
 		}

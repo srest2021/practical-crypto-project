@@ -12,8 +12,8 @@ import (
 	"io"
 	"strings"
 
-	"filippo.io/age/internal/bech32"
-	"filippo.io/age/internal/format"
+	"github.com/srest2021/practical-crypto-project/internal/bech32"
+	"github.com/srest2021/practical-crypto-project/internal/format"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
@@ -45,13 +45,13 @@ func newX25519RecipientFromPoint(publicKey []byte) (*X25519Recipient, error) {
 }
 
 // ParseX25519Recipient returns a new X25519Recipient from a Bech32 public key
-// encoding with the "age1" prefix.
+// encoding with the "agex1" prefix.
 func ParseX25519Recipient(s string) (*X25519Recipient, error) {
 	t, k, err := bech32.Decode(s)
 	if err != nil {
 		return nil, fmt.Errorf("malformed recipient %q: %v", s, err)
 	}
-	if t != "age" {
+	if t != "agex" {
 		return nil, fmt.Errorf("malformed recipient %q: invalid type %q", s, t)
 	}
 	r, err := newX25519RecipientFromPoint(k)
@@ -101,7 +101,7 @@ func (r *X25519Recipient) Wrap(fileKey []byte) ([]*Stanza, error) {
 
 // String returns the Bech32 public key encoding of r.
 func (r *X25519Recipient) String() string {
-	s, _ := bech32.Encode("age", r.theirPublicKey)
+	s, _ := bech32.Encode("agex", r.theirPublicKey)
 	return s
 }
 
@@ -142,7 +142,7 @@ func ParseX25519Identity(s string) (*X25519Identity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("malformed secret key: %v", err)
 	}
-	if t != "AGE-SECRET-KEY-" {
+	if t != "AGE-X-SECRET-KEY-" {
 		return nil, fmt.Errorf("malformed secret key: unknown type %q", t)
 	}
 	r, err := newX25519IdentityFromScalar(k)
@@ -203,6 +203,6 @@ func (i *X25519Identity) Recipient() *X25519Recipient {
 
 // String returns the Bech32 private key encoding of i.
 func (i *X25519Identity) String() string {
-	s, _ := bech32.Encode("AGE-SECRET-KEY-", i.secretKey)
+	s, _ := bech32.Encode("AGE-X-SECRET-KEY-", i.secretKey)
 	return strings.ToUpper(s)
 }

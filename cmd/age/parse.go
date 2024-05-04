@@ -12,10 +12,10 @@ import (
 	"os"
 	"strings"
 
-	"filippo.io/age"
-	"filippo.io/age/agessh"
-	"filippo.io/age/armor"
-	"filippo.io/age/plugin"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/agessh"
+	"github.com/srest2021/practical-crypto-project/armor"
+	"github.com/srest2021/practical-crypto-project/plugin"
 	"golang.org/x/crypto/cryptobyte"
 	"golang.org/x/crypto/ssh"
 )
@@ -44,6 +44,39 @@ func parseRecipient(arg string) (age.Recipient, error) {
 	return nil, fmt.Errorf("unknown recipient type: %q", arg)
 }
 
+func parseHybridRecipient(line1 string, line2 string) (age.Recipient, error) {
+	switch {
+	case strings.HasPrefix(line1, "agex1") && strings.HasPrefix(line2, "agek1"):
+		x25519_r, err := age.ParseX25519Recipient(line1)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 recipient: %v", err)
+		}
+
+		kyber_r, err := age.ParseKyberRecipient(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing Kyber recipient: %v", err)
+		}
+
+		r := age.CreateHybridRecipient(x25519_r, kyber_r)
+		return r, nil
+
+	case strings.HasPrefix(line1, "agek1") && strings.HasPrefix(line2, "agex1"):
+		kyber_r, err := age.ParseKyberRecipient(line1)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing Kyber recipient: %v", err)
+		}
+
+		x25519_r, err := age.ParseX25519Recipient(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 recipient: %v", err)
+		}
+
+		r := age.CreateHybridRecipient(x25519_r, kyber_r)
+		return r, nil
+	}
+	return nil, fmt.Errorf("error parsing hybrid recipient")
+}
+
 func parseRecipientsFile(name string) ([]age.Recipient, error) {
 	var f *os.File
 	if name == "-" {
@@ -68,25 +101,36 @@ func parseRecipientsFile(name string) ([]age.Recipient, error) {
 	var n int
 	for scanner.Scan() {
 		n++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || line == "" {
+		line1 := scanner.Text()
+		if strings.HasPrefix(line1, "#") || line1 == "" {
 			continue
 		}
-		if len(line) > lineLengthLimit {
+		if len(line1) > lineLengthLimit {
 			return nil, fmt.Errorf("%q: line %d is too long", name, n)
 		}
-		r, err := parseRecipient(line)
-		if err != nil {
-			if t, ok := sshKeyType(line); ok {
-				// Skip unsupported but valid SSH public keys with a warning.
-				warningf("recipients file %q: ignoring unsupported SSH key of type %q at line %d", name, t, n)
+
+		for scanner.Scan() {
+			n++
+			line2 := scanner.Text()
+			if strings.HasPrefix(line2, "#") || line2 == "" {
 				continue
 			}
-			// Hide the error since it might unintentionally leak the contents
-			// of confidential files.
-			return nil, fmt.Errorf("%q: malformed recipient at line %d", name, n)
+			if len(line2) > lineLengthLimit {
+				return nil, fmt.Errorf("%q: line %d is too long", name, n)
+			}
+
+			r, err := parseHybridRecipient(line1, line2)
+			if err != nil {
+				// Hide the error since it might unintentionally leak the contents
+				// of confidential files.
+				return nil, fmt.Errorf("%q: malformed recipient at lines %d-%d", name, n-1, n)
+			}
+			recs = append(recs, r)
+			break
 		}
-		recs = append(recs, r)
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("%q: failed to read recipients file: %v", name, err)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("%q: failed to read recipients file: %v", name, err)
@@ -206,6 +250,39 @@ func parseIdentity(s string) (age.Identity, error) {
 	}
 }
 
+func parseHybridIdentity(line1 string, line2 string) (age.Identity, error) {
+	switch {
+	case strings.HasPrefix(line1, "AGE-X-SECRET-KEY-1") && strings.HasPrefix(line2, "AGE-K-SECRET-KEY-1"):
+		x25519_i, err := age.ParseX25519Identity(line1)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 identity: %v", err)
+		}
+
+		kyber_i, err := age.ParseKyberIdentity(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing Kyber identity: %v", err)
+		}
+
+		i := age.CreateHybridIdentity(x25519_i, kyber_i)
+		return i, nil
+
+	case strings.HasPrefix(line1, "AGE-K-SECRET-KEY-1") && strings.HasPrefix(line2, "AGE-X-SECRET-KEY-1"):
+		kyber_i, err := age.ParseKyberIdentity(line1)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing Kyber identity: %v", err)
+		}
+
+		x25519_i, err := age.ParseX25519Identity(line2)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing X25519 identity: %v", err)
+		}
+
+		i := age.CreateHybridIdentity(x25519_i, kyber_i)
+		return i, nil
+	}
+	return nil, fmt.Errorf("error parsing hybrid identity")
+}
+
 // parseIdentities is like age.ParseIdentities, but supports plugin identities.
 func parseIdentities(f io.Reader) ([]age.Identity, error) {
 	const privateKeySizeLimit = 1 << 24 // 16 MiB
@@ -214,17 +291,30 @@ func parseIdentities(f io.Reader) ([]age.Identity, error) {
 	var n int
 	for scanner.Scan() {
 		n++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || line == "" {
+		line1 := scanner.Text()
+		if strings.HasPrefix(line1, "#") || line1 == "" {
 			continue
 		}
 
-		i, err := parseIdentity(line)
-		if err != nil {
-			return nil, fmt.Errorf("error at line %d: %v", n, err)
-		}
-		ids = append(ids, i)
+		for scanner.Scan() {
+			n++
+			line2 := scanner.Text()
+			if strings.HasPrefix(line2, "#") || line2 == "" {
+				continue
+			}
 
+			i, err := parseHybridIdentity(line1, line2)
+			if err != nil {
+				// Hide the error since it might unintentionally leak the contents
+				// of confidential files.
+				return nil, fmt.Errorf("malformed identity at lines %d-%d", n-1, n)
+			}
+
+			ids = append(ids, i)
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("failed to read secret keys file: %v", err)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read secret keys file: %v", err)

@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"filippo.io/age"
 	"github.com/rogpeppe/go-internal/testscript"
+	age "github.com/srest2021/practical-crypto-project"
 )
 
 func TestMain(m *testing.M) {

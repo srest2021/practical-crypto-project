@@ -1,19 +1,23 @@
-module filippo.io/age
+module github.com/srest2021/practical-crypto-project
 
-go 1.19
+go 1.21
+
+toolchain go1.21.6
 
 require (
-	filippo.io/edwards25519 v1.0.0
-	golang.org/x/crypto v0.4.0
-	golang.org/x/sys v0.11.0
-	golang.org/x/term v0.3.0
+	filippo.io/edwards25519 v1.1.0
+	golang.org/x/crypto v0.22.0
+	golang.org/x/sys v0.20.0
+	golang.org/x/term v0.19.0
 )
+
+require github.com/cloudflare/circl v1.3.8
 
 // Test dependencies.
 require (
-	c2sp.org/CCTV/age v0.0.0-20221230231406-5ea85644bd03
-	github.com/rogpeppe/go-internal v1.8.1
-	golang.org/x/tools v0.1.12 // indirect
+	c2sp.org/CCTV/age v0.0.0-20240306222714-3ec4d716e805
+	github.com/rogpeppe/go-internal v1.12.0
+	golang.org/x/tools v0.20.0 // indirect
 )
 
 // https://github.com/rogpeppe/go-internal/pull/172

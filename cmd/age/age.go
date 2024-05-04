@@ -15,10 +15,10 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"filippo.io/age"
-	"filippo.io/age/agessh"
-	"filippo.io/age/armor"
-	"filippo.io/age/plugin"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/agessh"
+	"github.com/srest2021/practical-crypto-project/armor"
+	"github.com/srest2021/practical-crypto-project/plugin"
 	"golang.org/x/term"
 )
 
@@ -315,19 +315,22 @@ func passphrasePromptForEncryption() (string, error) {
 }
 
 func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader, out io.Writer, armor bool) {
-	var recipients []age.Recipient
-	for _, arg := range recs {
-		r, err := parseRecipient(arg)
-		if err, ok := err.(gitHubRecipientError); ok {
-			errorWithHint(err.Error(), "instead, use recipient files like",
-				"    curl -O https://github.com/"+err.username+".keys",
-				"    age -R "+err.username+".keys")
-		}
-		if err != nil {
-			errorf("%v", err)
-		}
-		recipients = append(recipients, r)
+	if len(recs) > 0 {
+		errorf("Instead, use recipient files like: age -R alice.keys")
 	}
+	var recipients []age.Recipient
+	// for _, arg := range recs {
+	// 	r, err := parseRecipient(arg)
+	// 	if err, ok := err.(gitHubRecipientError); ok {
+	// 		errorWithHint(err.Error(), "instead, use recipient files like",
+	// 			"    curl -O https://github.com/"+err.username+".keys",
+	// 			"    age -R "+err.username+".keys")
+	// 	}
+	// 	if err != nil {
+	// 		errorf("%v", err)
+	// 	}
+	// 	recipients = append(recipients, r)
+	// }
 	for _, name := range files {
 		recs, err := parseRecipientsFile(name)
 		if err != nil {
@@ -335,6 +338,7 @@ func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader
 		}
 		recipients = append(recipients, recs...)
 	}
+
 	for _, f := range identities {
 		switch f.Type {
 		case "i":
@@ -432,7 +436,6 @@ func decryptNotPass(flags identityFlags, in io.Reader, out io.Writer) {
 			identities = append(identities, id)
 		}
 	}
-
 	decrypt(identities, in, out)
 }
 
@@ -482,6 +485,8 @@ func identitiesToRecipients(ids []age.Identity) ([]age.Recipient, error) {
 	var recipients []age.Recipient
 	for _, id := range ids {
 		switch id := id.(type) {
+		case *age.HybridIdentity:
+			recipients = append(recipients, id.Recipient())
 		case *age.X25519Identity:
 			recipients = append(recipients, id.Recipient())
 		case *plugin.Identity:

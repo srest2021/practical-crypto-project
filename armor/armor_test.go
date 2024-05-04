@@ -19,9 +19,9 @@ import (
 	"strings"
 	"testing"
 
-	"filippo.io/age"
-	"filippo.io/age/armor"
-	"filippo.io/age/internal/format"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/armor"
+	"github.com/srest2021/practical-crypto-project/internal/format"
 )
 
 func ExampleNewWriter() {

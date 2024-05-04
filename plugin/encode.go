@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"filippo.io/age/internal/bech32"
+	"github.com/srest2021/practical-crypto-project/internal/bech32"
 )
 
 // EncodeIdentity encodes a plugin identity string for a plugin with the given

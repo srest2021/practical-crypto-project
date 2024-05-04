@@ -14,8 +14,8 @@ import (
 	"runtime"
 	"testing"
 
-	"filippo.io/age"
-	"filippo.io/age/internal/bech32"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/internal/bech32"
 )
 
 func TestMain(m *testing.M) {

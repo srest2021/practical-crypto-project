@@ -20,8 +20,8 @@ import (
 
 	exec "golang.org/x/sys/execabs"
 
-	"filippo.io/age"
-	"filippo.io/age/internal/format"
+	age "github.com/srest2021/practical-crypto-project"
+	"github.com/srest2021/practical-crypto-project/internal/format"
 )
 
 type Recipient struct {

@@ -27,15 +27,38 @@ func ParseIdentities(f io.Reader) ([]Identity, error) {
 	var n int
 	for scanner.Scan() {
 		n++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || line == "" {
+		line1 := scanner.Text()
+		if strings.HasPrefix(line1, "#") || line1 == "" {
 			continue
 		}
-		i, err := ParseX25519Identity(line)
-		if err != nil {
-			return nil, fmt.Errorf("error at line %d: %v", n, err)
+
+		for scanner.Scan() {
+			n++
+			line2 := scanner.Text()
+			if strings.HasPrefix(line2, "#") || line2 == "" {
+				continue
+			}
+
+			var x25519_i *X25519Identity
+			var kyber_i *KyberIdentity
+
+			if strings.HasPrefix(line1, "AGE-X-SECRET-KEY-") && strings.HasPrefix(line2, "AGE-K-SECRET-KEY-") {
+				x25519_i, _ = ParseX25519Identity(line1)
+				kyber_i, _ = ParseKyberIdentity(line2)
+			} else if strings.HasPrefix(line1, "AGE-K-SECRET-KEY-") && strings.HasPrefix(line2, "AGE-X-SECRET-KEY-") {
+				x25519_i, _ = ParseX25519Identity(line2)
+				kyber_i, _ = ParseKyberIdentity(line1)
+			} else {
+				return nil, fmt.Errorf("error at line %d: must have a X25519-Kyber768 identity pair", n)
+			}
+
+			i := CreateHybridIdentity(x25519_i, kyber_i)
+			ids = append(ids, i)
+			break
 		}
-		ids = append(ids, i)
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("failed to read secret keys file: %v", err)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read secret keys file: %v", err)
@@ -62,17 +85,38 @@ func ParseRecipients(f io.Reader) ([]Recipient, error) {
 	var n int
 	for scanner.Scan() {
 		n++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || line == "" {
+		line1 := scanner.Text()
+		if strings.HasPrefix(line1, "#") || line1 == "" {
 			continue
 		}
-		r, err := ParseX25519Recipient(line)
-		if err != nil {
-			// Hide the error since it might unintentionally leak the contents
-			// of confidential files.
-			return nil, fmt.Errorf("malformed recipient at line %d", n)
+
+		for scanner.Scan() {
+			n++
+			line2 := scanner.Text()
+			if strings.HasPrefix(line2, "#") || line1 == "" {
+				continue
+			}
+
+			var x25519_r *X25519Recipient
+			var kyber_r *KyberRecipient
+
+			if strings.HasPrefix(line1, "agex") && strings.HasPrefix(line2, "agek") {
+				x25519_r, _ = ParseX25519Recipient(line1)
+				kyber_r, _ = ParseKyberRecipient(line2)
+			} else if strings.HasPrefix(line1, "agek") && strings.HasPrefix(line2, "agex") {
+				x25519_r, _ = ParseX25519Recipient(line2)
+				kyber_r, _ = ParseKyberRecipient(line1)
+			} else {
+				return nil, fmt.Errorf("error at line %d: must have a X25519-Kyber768 recipient pair", n)
+			}
+
+			r := CreateHybridRecipient(x25519_r, kyber_r)
+			recs = append(recs, r)
+			break
 		}
-		recs = append(recs, r)
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("failed to read recipients file: %v", err)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read recipients file: %v", err)

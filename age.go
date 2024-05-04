@@ -53,8 +53,8 @@ import (
 	"io"
 	"sort"
 
-	"filippo.io/age/internal/format"
-	"filippo.io/age/internal/stream"
+	"github.com/srest2021/practical-crypto-project/internal/format"
+	"github.com/srest2021/practical-crypto-project/internal/stream"
 )
 
 // An Identity is passed to Decrypt to unwrap an opaque file key from a
