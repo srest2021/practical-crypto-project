@@ -315,14 +315,9 @@ func passphrasePromptForEncryption() (string, error) {
 }
 
 func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader, out io.Writer, armor bool) {
-	printf("Enrypting without password")
-	printf("Recipients (should be length 0): ", recs)
 	if len(recs) > 0 {
 		errorf("Instead, use recipient files like: age -R alice.keys")
 	}
-	printf("Recipient files: ", files)
-	printf("Identities: ", identities)
-
 	var recipients []age.Recipient
 	// for _, arg := range recs {
 	// 	r, err := parseRecipient(arg)
@@ -337,24 +332,20 @@ func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader
 	// 	recipients = append(recipients, r)
 	// }
 	for _, name := range files {
-		printf("Parsing recipients file ", name)
 		recs, err := parseRecipientsFile(name)
 		if err != nil {
 			errorf("failed to parse recipient file %q: %v", name, err)
 		}
 		recipients = append(recipients, recs...)
 	}
-	printf("Parsed recipients from recipients file: ", recipients)
 
 	for _, f := range identities {
 		switch f.Type {
 		case "i":
-			printf("Parsing identities file ", f)
 			ids, err := parseIdentitiesFile(f.Value)
 			if err != nil {
 				errorf("reading %q: %v", f.Value, err)
 			}
-			printf("Converting identities to recipients")
 			r, err := identitiesToRecipients(ids)
 			if err != nil {
 				errorf("internal error processing %q: %v", f.Value, err)
@@ -368,9 +359,6 @@ func encryptNotPass(recs, files []string, identities identityFlags, in io.Reader
 			recipients = append(recipients, id.Recipient())
 		}
 	}
-	printf("Final parsed recipients, including those from identities file: ", recipients)
-
-	printf("Encrypting")
 	encrypt(recipients, in, out, armor)
 }
 
@@ -430,15 +418,11 @@ func (rejectScryptIdentity) Unwrap(stanzas []*age.Stanza) ([]byte, error) {
 }
 
 func decryptNotPass(flags identityFlags, in io.Reader, out io.Writer) {
-	printf("Decrypting without password")
-	printf("Identities files: ", flags)
-
 	identities := []age.Identity{rejectScryptIdentity{}}
 
 	for _, f := range flags {
 		switch f.Type {
 		case "i":
-			printf("Parsing identities file ", f)
 			ids, err := parseIdentitiesFile(f.Value)
 			if err != nil {
 				errorf("reading %q: %v", f.Value, err)
@@ -452,9 +436,6 @@ func decryptNotPass(flags identityFlags, in io.Reader, out io.Writer) {
 			identities = append(identities, id)
 		}
 	}
-	printf("Parsed identities: ", identities)
-
-	printf("Decrypting")
 	decrypt(identities, in, out)
 }
 

@@ -1,16 +1,21 @@
 module github.com/srest2021/practical-crypto-project
 
-go 1.19
+go 1.21
+
+toolchain go1.21.6
 
 require (
 	filippo.io/edwards25519 v1.0.0
-	golang.org/x/crypto v0.4.0
-	golang.org/x/sys v0.11.0
-	golang.org/x/term v0.3.0
+	golang.org/x/crypto v0.11.1-0.20230711161743-2e82bdd1719d
+	golang.org/x/sys v0.20.0
+	golang.org/x/term v0.10.0
 )
 
+require github.com/cloudflare/circl v1.3.8
+
 // kyber768
-require github.com/Universal-Health-Chain/uhc-cloudflare-circl v1.0.0
+//require github.com/Universal-Health-Chain/uhc-cloudflare-circl v1.0.0
+//require github.com/cloudflare/circl/pke/kyber/kyber768 v1.3.8
 
 // Test dependencies.
 require (

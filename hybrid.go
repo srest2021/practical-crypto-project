@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Universal-Health-Chain/uhc-cloudflare-circl/pke/kyber/kyber768"
+	"github.com/cloudflare/circl/pke/kyber/kyber768"
 	"github.com/srest2021/practical-crypto-project/internal/bech32"
 	"github.com/srest2021/practical-crypto-project/internal/format"
 	"golang.org/x/crypto/chacha20poly1305"
