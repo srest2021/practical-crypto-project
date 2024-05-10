@@ -1,3 +1,11 @@
+**Practical Cryptographic Systems**  
+**Jamie Stelnik, Sofia Rest, Madeline Estey**
+
+**Hybrid KEM for age using X25519 classical security and Kyber768 post-quantum security**
+
+**Research paper regarding our hybrid KEM: [Writeup.pdf](https://github.com/srest2021/practical-crypto-project/blob/main/Writeup.pdf)**  
+**Files with code changes: [kyber.go](https://github.com/srest2021/practical-crypto-project/blob/main/kyber.go) and [hybrid.go](https://github.com/srest2021/practical-crypto-project/blob/main/hybrid.go)**
+
 <p align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://github.com/FiloSottile/age/blob/main/logo/logo_white.svg">
